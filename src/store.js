@@ -1,0 +1,142 @@
+import { reactive, watch } from 'vue'
+
+const STORAGE_KEY = 'my-nav-data-v1'
+
+export const PALETTE = [
+  '#1e80ff', '#10a37f', '#fb7299', '#f38020',
+  '#0ea5e9', '#2563eb', '#6366f1', '#8b5cf6',
+  '#a855f7', '#ec4899', '#ef4444', '#f97316',
+  '#eab308', '#14b8a6', '#22c55e', '#64748b',
+]
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
+}
+
+function normalizeUrl(url) {
+  const u = String(url || '').trim()
+  if (!u) return u
+  return /^https?:\/\//i.test(u) ? u : 'https://' + u
+}
+
+function defaultData() {
+  const cat = (name, color) => ({ id: uid(), name, color })
+  const dev = cat('开发工具', PALETTE[0])
+  const ai = cat('AI', PALETTE[1])
+  const fun = cat('娱乐', PALETTE[2])
+  const tool = cat('工具', PALETTE[3])
+  const link = (categoryId, name, url) => ({ id: uid(), categoryId, name, url, createdAt: Date.now() })
+  return {
+    version: 1,
+    categories: [dev, ai, fun, tool],
+    links: [
+      link(dev.id, 'GitHub', 'https://github.com'),
+      link(dev.id, 'V2EX', 'https://v2ex.com'),
+      link(dev.id, 'MDN', 'https://developer.mozilla.org'),
+      link(dev.id, '掘金', 'https://juejin.cn'),
+      link(ai.id, 'ChatGPT', 'https://chatgpt.com'),
+      link(ai.id, 'Claude', 'https://claude.ai'),
+      link(ai.id, '智谱清言', 'https://chatglm.cn'),
+      link(fun.id, '知乎', 'https://zhihu.com'),
+      link(fun.id, 'B站', 'https://bilibili.com'),
+      link(fun.id, 'YouTube', 'https://youtube.com'),
+      link(tool.id, 'DeepL', 'https://www.deepl.com'),
+      link(tool.id, 'Notion', 'https://www.notion.so'),
+    ],
+  }
+}
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return defaultData()
+    const data = JSON.parse(raw)
+    if (!data || !Array.isArray(data.categories) || !Array.isArray(data.links)) return defaultData()
+    return data
+  } catch {
+    return defaultData()
+  }
+}
+
+export function useNavStore() {
+  const state = reactive(load())
+
+  watch(
+    () => JSON.stringify(state),
+    (json) => {
+      try { localStorage.setItem(STORAGE_KEY, json) } catch { /* 存储失败时忽略(如隐私模式) */ }
+    }
+  )
+
+  function addLink({ name, url, categoryId }) {
+    state.links.push({ id: uid(), name: name.trim(), url: normalizeUrl(url), categoryId, createdAt: Date.now() })
+  }
+
+  function updateLink(id, patch) {
+    const link = state.links.find((l) => l.id === id)
+    if (!link) return
+    if (patch.name != null) link.name = patch.name.trim()
+    if (patch.url != null) link.url = normalizeUrl(patch.url)
+    if (patch.categoryId != null) link.categoryId = patch.categoryId
+  }
+
+  function removeLink(id) {
+    const i = state.links.findIndex((l) => l.id === id)
+    if (i > -1) state.links.splice(i, 1)
+  }
+
+  function addCategory(name, color) {
+    state.categories.push({ id: uid(), name: name.trim(), color: color || PALETTE[state.categories.length % PALETTE.length] })
+  }
+
+  function updateCategory(id, patch) {
+    const cat = state.categories.find((c) => c.id === id)
+    if (!cat) return
+    if (patch.name != null) cat.name = patch.name.trim()
+    if (patch.color != null) cat.color = patch.color
+  }
+
+  function removeCategory(id) {
+    state.categories = state.categories.filter((c) => c.id !== id)
+    state.links = state.links.filter((l) => l.categoryId !== id)
+  }
+
+  /**
+   * 把链接拖到 targetCategoryId 分类里,插到 beforeId 链接之前;
+   * beforeId 为 null 时追加到该分类末尾。
+   */
+  function moveLink(dragId, targetCategoryId, beforeId) {
+    const from = state.links.findIndex((l) => l.id === dragId)
+    if (from < 0) return
+    const [item] = state.links.splice(from, 1)
+    item.categoryId = targetCategoryId
+    if (beforeId) {
+      const idx = state.links.findIndex((l) => l.id === beforeId)
+      state.links.splice(idx < 0 ? state.links.length : idx, 0, item)
+    } else {
+      let lastIdx = -1
+      state.links.forEach((l, i) => { if (l.categoryId === targetCategoryId) lastIdx = i })
+      state.links.splice(lastIdx + 1, 0, item)
+    }
+  }
+
+  function exportJson() {
+    return JSON.stringify({ version: state.version, categories: state.categories, links: state.links }, null, 2)
+  }
+
+  function importJson(text) {
+    const data = JSON.parse(text)
+    if (!data || !Array.isArray(data.categories) || !Array.isArray(data.links)) {
+      throw new Error('文件里缺少 categories / links 字段')
+    }
+    state.categories = data.categories
+    state.links = data.links
+  }
+
+  return {
+    state, PALETTE,
+    addLink, updateLink, removeLink,
+    addCategory, updateCategory, removeCategory,
+    moveLink, exportJson, importJson,
+  }
+}

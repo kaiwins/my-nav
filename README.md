@@ -24,31 +24,37 @@ npm run dev
 
 ## 部署到 GitHub Pages(免费)
 
-构建产物是纯静态文件,可直接托管在 GitHub Pages:
+`vite.config.js` 的 `base` 已设为相对路径 `./`,任意子路径都能正常加载。
 
-1. 在 GitHub 新建一个仓库,例如 `my-nav`
-2. 在本目录下推送代码:
+**方式一:一键部署到 gh-pages 分支(推荐,无需额外授权)**
 
 ```bash
-git init -b main
-git add .
-git commit -m "feat: 我的导航站"
-git remote add origin https://github.com/<你的用户名>/my-nav.git
-git push -u origin main
+npm run deploy
 ```
 
-3. 打开仓库页面 → **Settings → Pages → Build and deployment → Source 选择 `GitHub Actions`**
-4. 完成。之后每次 `git push` 会自动构建并发布到:
+构建产物会提交为 `gh-pages` 分支并推送。首次部署后,到仓库 **Settings → Pages → Build and deployment → Source 选 `Deploy from a branch`**,Branch 选 `gh-pages` / `(root)`,保存即可。之后每次更新内容,再跑一次 `npm run deploy` 就会自动发布到:
 
 ```
 https://<你的用户名>.github.io/my-nav/
 ```
 
-说明:
+也可以用 GitHub CLI 一条命令开启(需要登录 gh):
 
-- 仓库里已内置自动部署 workflow(`.github/workflows/deploy.yml`),无需额外配置
-- `vite.config.js` 的 `base` 已设为相对路径 `./`,部署在任意子路径都能正常加载
-- 本地预览构建产物:`npm run build && npm run preview`
+```bash
+gh api repos/<你的用户名>/my-nav/pages -X POST --input - <<< '{"build_type":"legacy","source":{"branch":"gh-pages","path":"/"}}'
+```
+
+**方式二:GitHub Actions 自动部署**
+
+仓库本地留有 `.github/workflows/deploy.yml`(未入库),推送 workflow 文件需要 git 凭据具备 `workflow` 权限:
+
+```bash
+gh auth refresh -s workflow
+```
+
+授权后取消 `.gitignore` 里对该文件的忽略并提交推送,再把 Settings → Pages 的 Source 切到 `GitHub Actions` 即可:每次 `git push` 自动构建发布。
+
+本地预览构建产物:`npm run build && npm run preview`
 
 ## 数据说明
 

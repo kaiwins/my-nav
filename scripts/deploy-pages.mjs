@@ -18,8 +18,17 @@ execSync("git read-tree --empty", { cwd: root, env });
 execSync("git add -A", { cwd: root, env: wtEnv });
 const tree = execSync("git write-tree", { cwd: root, env }).toString().trim();
 const message = `deploy: ${new Date().toISOString()}`;
-const commit = execSync(`git commit-tree ${tree} -m "${message}"`, { cwd: root, env }).toString().trim();
+// gh-pages 已存在时把新提交挂到其后面,保持可快进
+let parent = "";
+try {
+  parent = execSync("git rev-parse --verify refs/heads/gh-pages", { cwd: root, env }).toString().trim();
+} catch { /* 首次部署,gh-pages 尚不存在 */ }
+const commit = execSync(
+  `git commit-tree ${tree} ${parent ? `-p ${parent}` : ""} -m "${message}"`,
+  { cwd: root, env }
+).toString().trim();
 execSync(`git update-ref refs/heads/gh-pages ${commit}`, { cwd: root, env });
 
-run("git push origin gh-pages");
+// 部署分支是快照式历史,统一强制推送,避免本地/远端漂移导致拒绝
+run("git push --force origin gh-pages");
 console.log("gh-pages branch updated.");

@@ -23,24 +23,24 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-#app { min-height: 100vh; }
+#app { height: 100vh; }
 
 a { color: inherit; text-decoration: none; }
 button { font-family: inherit; cursor: pointer; }
 input, select { font-family: inherit; }
 
-/* ---------- 布局 ---------- */
-.app { display: flex; min-height: 100vh; }
+/* ---------- 布局:整页不滚动,侧栏与内容区各自内部滚动 ---------- */
+.app { display: flex; height: 100vh; overflow: hidden; }
 
 .nv-side {
-  position: sticky; top: 0;
-  width: 256px; flex: none; align-self: flex-start;
-  height: 100vh; overflow-y: auto;
+  width: 256px; flex: none;
+  height: 100%; overflow: hidden;
   background: var(--card);
   border-right: 1px solid var(--border);
   padding: 22px 18px;
-  display: flex; flex-direction: column; gap: 18px;
+  display: flex; flex-direction: column; gap: 16px;
 }
+.nv-logo, .nv-search, .nv-navaddrow, .nv-sidefoot { flex-shrink: 0; }
 .nv-side::-webkit-scrollbar { width: 6px; }
 .nv-side::-webkit-scrollbar-thumb { background: #d9dce4; border-radius: 999px; }
 
@@ -63,7 +63,9 @@ input, select { font-family: inherit; }
 .nv-search input { flex: 1; min-width: 40px; border: none; outline: none; background: transparent; color: var(--text); font-size: 14px; }
 .nv-search input::placeholder { color: var(--faint); }
 
-.nv-nav { display: flex; flex-direction: column; gap: 4px; }
+.nv-nav { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+.nv-nav::-webkit-scrollbar { width: 6px; }
+.nv-nav::-webkit-scrollbar-thumb { background: #d9dce4; border-radius: 999px; }
 .nv-navitem {
   height: 42px; padding: 0 12px; border-radius: 10px;
   display: flex; align-items: center; gap: 10px;
@@ -114,7 +116,7 @@ input, select { font-family: inherit; }
 .nv-minibtn:hover { color: var(--accent); border-color: var(--accent); transform: translateY(-1px); }
 .nv-sidefoot p { margin: 0; font-size: 12px; color: var(--faint); }
 
-.nv-main { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 28px 44px 44px; }
+.nv-main { flex: 1; min-width: 0; overflow-y: auto; display: flex; flex-direction: column; padding: 28px 44px 44px; }
 
 .nv-sideadd {
   flex: 1; height: 44px;
@@ -134,15 +136,15 @@ input, select { font-family: inherit; }
 .nv-count { font-size: 12px; color: var(--muted); background: #f4f5f7; padding: 3px 10px; border-radius: 999px; font-variant-numeric: tabular-nums; }
 .nv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
 
-/* ---------- 卡片:分类色点 + 名字,快速启动胶囊 ---------- */
+/* ---------- 卡片:色点 + 完整名字,编辑按钮占位不遮挡 ---------- */
 .nv-card {
   position: relative;
-  display: flex; align-items: center; justify-content: center; gap: 11px;
-  min-height: 52px; height: auto; padding: 10px 18px;
+  display: flex; align-items: center; gap: 10px;
+  min-height: 52px; height: auto; padding: 12px 14px 12px 16px;
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 13px;
-  font-size: 16px; font-weight: 500;
+  font-size: 15px; font-weight: 500;
   transition: transform 0.18s ease, box-shadow 0.25s ease, border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
 }
 .nv-card:hover {
@@ -157,20 +159,19 @@ input, select { font-family: inherit; }
 .nv-card .nv-dot { background: var(--dot, var(--accent)); transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
 .nv-card:hover .nv-dot { transform: scale(1.45); }
 .nv-name {
-  flex: 0 1 auto; min-width: 0; max-width: 100%;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-  overflow: hidden; word-break: break-word; line-height: 1.35;
+  flex: 1 1 auto; min-width: 0;
+  font-size: 15px; line-height: 1.4;
+  word-break: break-word; overflow-wrap: anywhere;
+  text-align: left;
 }
 .nv-edit {
-  position: absolute; right: 10px; top: 50%;
-  transform: translate(5px, -50%);
-  width: 26px; height: 26px;
+  flex: none; width: 26px; height: 26px;
   display: grid; place-items: center;
   border-radius: 7px; border: none; background: transparent;
   color: var(--muted); opacity: 0;
-  transition: all 0.2s ease;
+  transition: opacity 0.2s ease, background 0.2s ease, color 0.2s ease;
 }
-.nv-card:hover .nv-edit, .nv-card:focus-within .nv-edit { opacity: 1; transform: translate(0, -50%); }
+.nv-card:hover .nv-edit, .nv-card:focus-within .nv-edit { opacity: 1; }
 .nv-edit:hover { background: #f4f5f7; color: var(--text); }
 .nv-card-add { --dot: var(--accent); border-style: dashed; border-color: #d4d7e0; background: transparent; color: var(--muted); font-weight: 400; }
 .nv-card-add:hover { color: var(--accent); border-color: var(--accent); background: var(--soft); }
@@ -348,14 +349,13 @@ input, select { font-family: inherit; }
 @media (max-width: 760px) {
   .app { flex-direction: column; }
   .nv-side {
-    position: sticky; top: 0; z-index: 10;
     width: 100%; height: auto; overflow: visible;
     flex-direction: row; flex-wrap: wrap; align-items: center;
     border-right: none; border-bottom: 1px solid var(--border);
   }
-  .nv-nav { flex-direction: row; flex-wrap: wrap; flex: 1; }
+  .nv-nav { overflow-y: visible; flex: 1; min-height: 0; flex-direction: row; flex-wrap: wrap; }
   .nv-sideadd { flex: 1; width: auto; }
   .nv-sidefoot { margin-top: 0; flex-direction: row; align-items: center; }
   .nv-sidefoot p { display: none; }
-  .nv-main { padding: 18px 16px; }
+  .nv-main { flex: 1; overflow-y: auto; padding: 18px 16px; }
 }

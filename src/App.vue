@@ -12,48 +12,52 @@ const { state } = store
 const activeCat = ref('all')
 const query = ref('')
 const searchInput = ref(null)
+const mainEl = ref(null)
 
 function setCat(id) {
   activeCat.value = id
+  const main = mainEl.value
+  if (!main) return
   if (id === 'all') {
-    smoothScrollTo(0)
+    smoothScrollTo(main, 0)
     return
   }
   const el = document.getElementById('nvsec-' + id)
   if (el) {
-    smoothScrollTo(el.getBoundingClientRect().top + window.scrollY - 24)
+    const mainTop = main.getBoundingClientRect().top
+    smoothScrollTo(main, el.getBoundingClientRect().top - mainTop + main.scrollTop - 16)
   }
 }
 
 /* 平滑滚动:setInterval 缓动实现,不依赖浏览器 smooth 与 rAF(部分环境被禁用) */
-function smoothScrollTo(targetY) {
-  const maxY = document.documentElement.scrollHeight - window.innerHeight
+function smoothScrollTo(container, targetY) {
+  const maxY = container.scrollHeight - container.clientHeight
   const y = Math.max(0, Math.min(targetY, maxY))
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    window.scrollTo(0, y)
+    container.scrollTop = y
     return
   }
-  const startY = window.scrollY
+  const startY = container.scrollTop
   const diff = y - startY
   if (Math.abs(diff) < 2) return
   const duration = 450
   const start = Date.now()
   const timer = setInterval(() => {
     const t = Math.min(1, (Date.now() - start) / duration)
-    window.scrollTo(0, startY + diff * (1 - Math.pow(1 - t, 3)))
+    container.scrollTop = startY + diff * (1 - Math.pow(1 - t, 3))
     if (t >= 1) {
       clearInterval(timer)
-      window.scrollTo(0, y)
+      container.scrollTop = y
     }
   }, 16)
 }
 
 function scrollTop() {
-  smoothScrollTo(0)
+  if (mainEl.value) smoothScrollTo(mainEl.value, 0)
 }
 
 function scrollBottom() {
-  smoothScrollTo(document.documentElement.scrollHeight)
+  if (mainEl.value) smoothScrollTo(mainEl.value, mainEl.value.scrollHeight)
 }
 
 function openFirstResult() {
@@ -303,25 +307,22 @@ function onGlobalKey(e) {
   }
 }
 
-// 滚动时让侧栏高亮跟随当前可见的分组
-function onWinScroll() {
+// 内容区滚动时让侧栏高亮跟随当前可见的分组
+function onMainScroll() {
   if (query.value) return
+  const main = mainEl.value
+  if (!main) return
+  const mainTop = main.getBoundingClientRect().top
   let current = 'all'
   for (const s of sections.value) {
     const el = document.getElementById('nvsec-' + s.cat.id)
-    if (el && el.getBoundingClientRect().top <= 96) current = s.cat.id
+    if (el && el.getBoundingClientRect().top - mainTop <= 80) current = s.cat.id
   }
   activeCat.value = current
 }
 
-onMounted(() => {
-  window.addEventListener('keydown', onGlobalKey)
-  window.addEventListener('scroll', onWinScroll, { passive: true })
-})
-onUnmounted(() => {
-  window.removeEventListener('keydown', onGlobalKey)
-  window.removeEventListener('scroll', onWinScroll)
-})
+onMounted(() => window.addEventListener('keydown', onGlobalKey))
+onUnmounted(() => window.removeEventListener('keydown', onGlobalKey))
 </script>
 
 <template>
@@ -405,7 +406,7 @@ onUnmounted(() => {
     </aside>
 
     <!-- 主区域 -->
-    <main class="nv-main">
+    <main class="nv-main" ref="mainEl" @scroll="onMainScroll">
       <div class="nv-body">
         <section
           v-for="(s, si) in sections"

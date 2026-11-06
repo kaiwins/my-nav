@@ -115,7 +115,6 @@ input, select { font-family: inherit; }
 .nv-sidefoot { margin-top: auto; display: flex; flex-direction: column; gap: 6px; padding: 0 2px; }
 .nv-minibtn-row { display: flex; gap: 8px; }
 .nv-sidefoot p { margin: 0; font-size: 11px; color: var(--faint); }
-.nv-restore { width: 100%; }
 
 .nv-main { flex: 1; min-width: 0; overflow-y: auto; display: flex; flex-direction: column; padding: 28px 44px 44px; }
 

@@ -295,17 +295,6 @@ function onImportFile(e) {
   reader.readAsText(file)
 }
 
-function onRestorePrev() {
-  try {
-    store.restorePrev()
-    activeCat.value = 'all'
-    query.value = ''
-    showToast('已恢复上次数据')
-  } catch (err) {
-    showToast(err && err.message ? err.message : '没有可恢复的上次数据')
-  }
-}
-
 /* ---------- 轻提示 ---------- */
 const toast = ref('')
 let toastTimer = null
@@ -420,7 +409,6 @@ onUnmounted(() => window.removeEventListener('keydown', onGlobalKey))
           <button class="nv-minibtn" type="button" @click="fileInput?.click()"><Icon name="upload" />导入</button>
           <input ref="fileInput" type="file" accept=".json,application/json" hidden @change="onImportFile" />
         </div>
-        <button class="nv-minibtn nv-restore" type="button" @click="onRestorePrev">恢复上次数据</button>
         <p>数据保存在本地浏览器</p>
       </div>
     </aside>

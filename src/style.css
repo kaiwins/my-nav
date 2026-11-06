@@ -53,10 +53,17 @@ input, select { font-family: inherit; }
 
 .nv-search {
   display: flex; align-items: center; gap: 8px;
-  height: 38px; padding: 0 12px;
+  height: 38px; padding: 0 6px 0 12px;
   border-radius: 10px; background: #f4f5f7; color: var(--muted);
   transition: background 0.2s ease, box-shadow 0.2s ease;
 }
+.nv-clear {
+  width: 22px; height: 22px; flex: none;
+  display: grid; place-items: center;
+  border: none; background: transparent; border-radius: 999px; color: var(--muted);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.nv-clear:hover { background: #e9eaee; color: var(--text); }
 .nv-search:focus-within { background: #fff; box-shadow: 0 0 0 2px var(--soft); }
 .nv-search input { flex: 1; min-width: 40px; border: none; outline: none; background: transparent; color: var(--text); font-size: 14px; }
 .nv-search input::placeholder { color: var(--faint); }
@@ -108,6 +115,7 @@ input, select { font-family: inherit; }
 .nv-sidefoot { margin-top: auto; display: flex; flex-direction: column; gap: 6px; padding: 0 2px; }
 .nv-minibtn-row { display: flex; gap: 8px; }
 .nv-sidefoot p { margin: 0; font-size: 11px; color: var(--faint); }
+.nv-restore { width: 100%; }
 
 .nv-main { flex: 1; min-width: 0; overflow-y: auto; display: flex; flex-direction: column; padding: 28px 44px 44px; }
 
@@ -295,8 +303,18 @@ input, select { font-family: inherit; }
   position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 20;
   background: #fff; border: 1px solid var(--border); border-radius: 12px;
   box-shadow: 0 16px 40px rgba(16, 24, 40, 0.18);
-  padding: 6px; max-height: 280px; overflow-y: auto;
+  padding: 6px;
 }
+.cselect-panel.is-flipped { top: auto; bottom: calc(100% + 6px); }
+.cselect-filterrow { position: relative; display: flex; align-items: center; margin-bottom: 6px; flex-shrink: 0; }
+.cselect-clear {
+  position: absolute; right: 5px; width: 22px; height: 22px;
+  display: grid; place-items: center;
+  border: none; background: transparent; border-radius: 999px; color: var(--muted);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.cselect-clear:hover { background: #e9eaee; color: var(--text); }
+.cselect-list { overflow-y: auto; }
 .cselect-opt {
   width: 100%; height: 38px;
   display: flex; align-items: center; gap: 8px;
@@ -307,9 +325,9 @@ input, select { font-family: inherit; }
 .cselect-opt:hover { background: #f4f5f7; }
 .cselect-opt.is-active { background: var(--soft); color: var(--accent); font-weight: 500; }
 .cselect-filter {
-  width: 100%; height: 34px; margin-bottom: 6px;
+  width: 100%; height: 34px;
   border: 1px solid var(--border); border-radius: 8px;
-  padding: 0 10px; font-size: 13px; outline: none;
+  padding: 0 30px 0 10px; font-size: 13px; outline: none;
 }
 .cselect-filter:focus { border-color: var(--accent); }
 .cselect-empty { padding: 10px; font-size: 13px; color: var(--muted); text-align: center; }

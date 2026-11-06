@@ -1,6 +1,7 @@
 import { reactive, watch } from 'vue'
 
 const STORAGE_KEY = 'my-nav-data-v1'
+const PREV_KEY = 'my-nav-data-prev-v1'
 
 export const PALETTE = [
   '#1e80ff', '#10a37f', '#fb7299', '#f38020',
@@ -47,7 +48,12 @@ export function useNavStore() {
   watch(
     () => JSON.stringify(state),
     (json) => {
-      try { localStorage.setItem(STORAGE_KEY, json) } catch { /* 存储失败时忽略(如隐私模式) */ }
+      try {
+        // 每次保存前把旧值挪到单代快照,供"恢复上次数据"使用
+        const prev = localStorage.getItem(STORAGE_KEY)
+        if (prev && prev !== json) localStorage.setItem(PREV_KEY, prev)
+        localStorage.setItem(STORAGE_KEY, json)
+      } catch { /* 存储失败时忽略(如隐私模式) */ }
     }
   )
 
@@ -132,10 +138,29 @@ export function useNavStore() {
     state.links = data.links
   }
 
+  /* 用单代快照换回上一次的数据;当前数据会存进快照位,可再次恢复(来回切换) */
+  function hasPrev() {
+    return !!localStorage.getItem(PREV_KEY)
+  }
+
+  function restorePrev() {
+    const raw = localStorage.getItem(PREV_KEY)
+    if (!raw) throw new Error('没有可恢复的上次数据')
+    const data = JSON.parse(raw)
+    if (!data || !Array.isArray(data.categories) || !Array.isArray(data.links)) {
+      throw new Error('快照数据不完整')
+    }
+    const backup = JSON.stringify({ version: state.version, categories: state.categories, links: state.links })
+    localStorage.setItem(PREV_KEY, backup)
+    state.categories = data.categories
+    state.links = data.links
+  }
+
   return {
     state, PALETTE,
     addLink, updateLink, removeLink,
     addCategory, updateCategory, removeCategory,
     moveLink, moveCategory, exportJson, importJson,
+    hasPrev, restorePrev,
   }
 }

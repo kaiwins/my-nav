@@ -22,16 +22,44 @@ const catOpen = ref(false)
 const catFilter = ref('')
 const cselectEl = ref(null)
 const catFilterInput = ref(null)
+const flipUp = ref(false)
+const listMax = ref(280)
 const selectedCat = computed(() => props.categories.find((c) => c.id === categoryId.value))
 const filteredCats = computed(() => {
   const f = catFilter.value.trim().toLowerCase()
   return f ? props.categories.filter((c) => c.name.toLowerCase().includes(f)) : props.categories
 })
 
+/* 面板位置自适应:下方空间不够就向上翻,列表高度按剩余空间计算 */
+function computePanelPos() {
+  const el = cselectEl.value
+  if (!el) return
+  const rect = el.getBoundingClientRect()
+  const filterH = props.categories.length > 8 ? 46 : 0
+  const chrome = filterH + 14
+  const below = window.innerHeight - rect.bottom - 10
+  const above = rect.top - 10
+  if (below >= above) {
+    flipUp.value = false
+    listMax.value = Math.max(140, Math.min(300, below - chrome))
+  } else {
+    flipUp.value = true
+    listMax.value = Math.max(140, Math.min(300, above - chrome))
+  }
+}
+
 function toggleCat() {
   catOpen.value = !catOpen.value
   catFilter.value = ''
-  if (catOpen.value) nextTick(() => catFilterInput.value?.focus())
+  if (catOpen.value) {
+    computePanelPos()
+    nextTick(() => catFilterInput.value?.focus())
+  }
+}
+
+function clearFilter() {
+  catFilter.value = ''
+  nextTick(() => catFilterInput.value?.focus())
 }
 /* Esc 分级:下拉面板开着只关面板(拦截冒泡),否则放行给弹窗整体关闭 */
 function onFilterKeydown(e) {
@@ -115,27 +143,33 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
                   <span class="cselect-label">{{ selectedCat?.name || '请选择分类' }}</span>
                   <Icon name="chevron-down" />
                 </button>
-                <div v-if="catOpen" class="cselect-panel" role="listbox">
-                  <input
-                    v-if="categories.length > 8"
-                    ref="catFilterInput"
-                    v-model="catFilter"
-                    class="cselect-filter"
-                    type="text"
-                    placeholder="筛选分类…"
-                    @keydown="onFilterKeydown"
-                  />
-                  <button
-                    v-for="c in filteredCats"
-                    :key="c.id"
-                    type="button"
-                    class="cselect-opt"
-                    :class="{ 'is-active': c.id === categoryId }"
-                    @click="chooseCat(c)"
-                  >
-                    <span class="nv-dot" :style="{ background: c.color }"></span>{{ c.name }}
-                  </button>
-                  <div v-if="!filteredCats.length" class="cselect-empty">没有匹配的分类</div>
+                <div v-if="catOpen" class="cselect-panel" :class="{ 'is-flipped': flipUp }" role="listbox">
+                  <div v-if="categories.length > 8" class="cselect-filterrow">
+                    <input
+                      ref="catFilterInput"
+                      v-model="catFilter"
+                      class="cselect-filter"
+                      type="text"
+                      placeholder="筛选分类…"
+                      @keydown="onFilterKeydown"
+                    />
+                    <button v-if="catFilter" type="button" class="cselect-clear" aria-label="清空筛选" @click="clearFilter">
+                      <Icon name="x" />
+                    </button>
+                  </div>
+                  <div class="cselect-list" :style="{ maxHeight: listMax + 'px' }">
+                    <button
+                      v-for="c in filteredCats"
+                      :key="c.id"
+                      type="button"
+                      class="cselect-opt"
+                      :class="{ 'is-active': c.id === categoryId }"
+                      @click="chooseCat(c)"
+                    >
+                      <span class="nv-dot" :style="{ background: c.color }"></span>{{ c.name }}
+                    </button>
+                    <div v-if="!filteredCats.length" class="cselect-empty">没有匹配的分类</div>
+                  </div>
                 </div>
               </div>
             </div>

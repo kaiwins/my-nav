@@ -35,4 +35,8 @@ defineProps({ name: { type: String, required: true } })
     <path d="m19 12-7 7-7-7" />
     <path d="M12 5v14" />
   </svg>
+  <svg v-else-if="name === 'x'" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+    <path d="M18 6 6 18" />
+    <path d="m6 6 12 12" />
+  </svg>
 </template>

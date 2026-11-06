@@ -117,9 +117,14 @@ input, select { font-family: inherit; }
 .nv-sidefoot p { margin: 0; font-size: 11px; color: var(--faint); }
 
 .nv-main { flex: 1; min-width: 0; overflow-y: auto; display: flex; flex-direction: column; padding: 28px 44px 44px; }
+.nv-main::-webkit-scrollbar { width: 8px; }
+.nv-main::-webkit-scrollbar-thumb { background: #d9dce4; border-radius: 999px; }
+.nv-main::-webkit-scrollbar-thumb:hover { background: #c5c9d4; }
+.nv-main::-webkit-scrollbar-track { background: transparent; }
 
 .nv-body { display: flex; flex-direction: column; gap: 32px; flex: 1; width: 100%; }
 .nv-sec-h { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.nv-secdot { width: 11px; height: 11px; border-radius: 4px; flex: none; }
 .nv-sec-h h3 { margin: 0; font-size: 17px; font-weight: 600; }
 .nv-count { font-size: 12px; color: var(--muted); background: #f4f5f7; padding: 3px 10px; border-radius: 999px; font-variant-numeric: tabular-nums; }
 .nv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }

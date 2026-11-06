@@ -424,6 +424,7 @@ onUnmounted(() => window.removeEventListener('keydown', onGlobalKey))
           :style="{ animationDelay: 140 + si * 90 + 'ms' }"
         >
           <div class="nv-sec-h">
+            <span class="nv-secdot" :style="{ background: s.cat.color }"></span>
             <h3>{{ s.cat.name }}</h3>
             <span class="nv-count">{{ s.links.length }}</span>
           </div>

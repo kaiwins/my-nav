@@ -46,7 +46,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
 
 <template>
   <Teleport to="body">
-    <Transition name="modal">
+    <Transition name="modal" :duration="180">
       <div v-if="open" class="modal-mask" @mousedown.self="emit('close')">
         <div class="modal" role="dialog" aria-modal="true">
           <template v-if="!confirming">

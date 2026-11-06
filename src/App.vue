@@ -15,7 +15,45 @@ const searchInput = ref(null)
 
 function setCat(id) {
   activeCat.value = id
-  window.scrollTo({ top: 0, behavior: 'smooth' })
+  if (id === 'all') {
+    smoothScrollTo(0)
+    return
+  }
+  const el = document.getElementById('nvsec-' + id)
+  if (el) {
+    smoothScrollTo(el.getBoundingClientRect().top + window.scrollY - 24)
+  }
+}
+
+/* 平滑滚动:setInterval 缓动实现,不依赖浏览器 smooth 与 rAF(部分环境被禁用) */
+function smoothScrollTo(targetY) {
+  const maxY = document.documentElement.scrollHeight - window.innerHeight
+  const y = Math.max(0, Math.min(targetY, maxY))
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    window.scrollTo(0, y)
+    return
+  }
+  const startY = window.scrollY
+  const diff = y - startY
+  if (Math.abs(diff) < 2) return
+  const duration = 450
+  const start = Date.now()
+  const timer = setInterval(() => {
+    const t = Math.min(1, (Date.now() - start) / duration)
+    window.scrollTo(0, startY + diff * (1 - Math.pow(1 - t, 3)))
+    if (t >= 1) {
+      clearInterval(timer)
+      window.scrollTo(0, y)
+    }
+  }, 16)
+}
+
+function scrollTop() {
+  smoothScrollTo(0)
+}
+
+function scrollBottom() {
+  smoothScrollTo(document.documentElement.scrollHeight)
 }
 
 function openFirstResult() {
@@ -30,7 +68,6 @@ function openFirstResult() {
 const sections = computed(() => {
   const q = query.value.trim().toLowerCase()
   return state.categories
-    .filter((c) => activeCat.value === 'all' || c.id === activeCat.value)
     .map((cat) => ({
       cat,
       links: state.links.filter(
@@ -258,7 +295,7 @@ function showToast(msg) {
   toastTimer = setTimeout(() => (toast.value = ''), 2400)
 }
 
-/* ---------- 全局按键 ---------- */
+/* ---------- 全局按键与滚动 ---------- */
 function onGlobalKey(e) {
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
     e.preventDefault()
@@ -266,8 +303,25 @@ function onGlobalKey(e) {
   }
 }
 
-onMounted(() => window.addEventListener('keydown', onGlobalKey))
-onUnmounted(() => window.removeEventListener('keydown', onGlobalKey))
+// 滚动时让侧栏高亮跟随当前可见的分组
+function onWinScroll() {
+  if (query.value) return
+  let current = 'all'
+  for (const s of sections.value) {
+    const el = document.getElementById('nvsec-' + s.cat.id)
+    if (el && el.getBoundingClientRect().top <= 96) current = s.cat.id
+  }
+  activeCat.value = current
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', onGlobalKey)
+  window.addEventListener('scroll', onWinScroll, { passive: true })
+})
+onUnmounted(() => {
+  window.removeEventListener('keydown', onGlobalKey)
+  window.removeEventListener('scroll', onWinScroll)
+})
 </script>
 
 <template>
@@ -356,6 +410,7 @@ onUnmounted(() => window.removeEventListener('keydown', onGlobalKey))
         <section
           v-for="(s, si) in sections"
           :key="s.cat.id"
+          :id="'nvsec-' + s.cat.id"
           class="nv-sec anim"
           :style="{ animationDelay: 140 + si * 90 + 'ms' }"
         >
@@ -401,6 +456,16 @@ onUnmounted(() => window.removeEventListener('keydown', onGlobalKey))
       </div>
     </main>
 
+    <!-- 右下角滚动按钮 -->
+    <div class="nv-scrollbtns">
+      <button class="nv-scrollbtn" type="button" title="回到顶部" aria-label="回到顶部" @click="scrollTop">
+        <Icon name="arrow-up" />
+      </button>
+      <button class="nv-scrollbtn" type="button" title="跳到底部" aria-label="跳到底部" @click="scrollBottom">
+        <Icon name="arrow-down" />
+      </button>
+    </div>
+
     <!-- 弹窗 -->
     <LinkDialog
       :open="linkDialog.open"
@@ -421,7 +486,7 @@ onUnmounted(() => window.removeEventListener('keydown', onGlobalKey))
       @close="categoryDialog.open = false"
     />
 
-    <Transition name="toast">
+    <Transition name="toast" :duration="250">
       <div v-if="toast" class="nv-toast">{{ toast }}</div>
     </Transition>
   </div>

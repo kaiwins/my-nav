@@ -176,6 +176,48 @@ function onDropOnGrid(e, cat) {
   store.moveLink(id, cat.id, null)
 }
 
+/* ---------- 分类拖拽 ---------- */
+const dragCatId = ref(null)
+const dropHintCat = ref(null)
+
+function onCatDragStart(e, cat) {
+  dragCatId.value = cat.id
+  dropHintCat.value = null
+  e.dataTransfer.effectAllowed = 'move'
+  e.dataTransfer.setData('text/plain', cat.id)
+}
+
+function onCatDragEnd() {
+  dragCatId.value = null
+  dropHintCat.value = null
+}
+
+function onCatDragOver(e, cat) {
+  if (!dragCatId.value) return
+  e.preventDefault()
+  e.dataTransfer.dropEffect = 'move'
+  const rect = e.currentTarget.getBoundingClientRect()
+  dropHintCat.value = { id: cat.id, before: e.clientY < rect.top + rect.height / 2 }
+}
+
+function onCatDrop(e, cat) {
+  e.preventDefault()
+  const id = dragCatId.value
+  const hint = dropHintCat.value
+  dragCatId.value = null
+  dropHintCat.value = null
+  if (!id || id === cat.id) return
+  const rect = e.currentTarget.getBoundingClientRect()
+  const before = hint && hint.id === cat.id ? hint.before : e.clientY < rect.top + rect.height / 2
+  if (before) {
+    store.moveCategory(id, cat.id)
+  } else {
+    const idx = state.categories.findIndex((c) => c.id === cat.id)
+    const next = state.categories[idx + 1]
+    store.moveCategory(id, next ? next.id : null)
+  }
+}
+
 /* ---------- 导入 / 导出 ---------- */
 const fileInput = ref(null)
 
@@ -240,7 +282,7 @@ onUnmounted(() => window.removeEventListener('keydown', onGlobalKey))
           ref="searchInput"
           v-model="query"
           type="text"
-          placeholder="搜索链接…(Ctrl+K,Enter 直达)"
+          placeholder="搜索链接…(Ctrl+K)"
           aria-label="搜索链接"
           @keydown.enter="openFirstResult"
           @keydown.esc="query = ''"
@@ -260,7 +302,22 @@ onUnmounted(() => window.removeEventListener('keydown', onGlobalKey))
             <span class="nv-navcount">{{ state.links.length }}</span>
           </button>
         </div>
-        <div v-for="c in state.categories" :key="c.id" class="nv-navrow">
+        <div
+          v-for="c in state.categories"
+          :key="c.id"
+          class="nv-navrow"
+          :class="{
+            'drop-before': dropHintCat?.id === c.id && dropHintCat.before,
+            'drop-after': dropHintCat?.id === c.id && !dropHintCat.before,
+          }"
+          :style="{ '--dot': c.color }"
+          draggable="true"
+          title="拖拽可调整分类顺序"
+          @dragstart="onCatDragStart($event, c)"
+          @dragend="onCatDragEnd"
+          @dragover="onCatDragOver($event, c)"
+          @drop.stop="onCatDrop($event, c)"
+        >
           <button
             class="nv-navitem"
             :class="{ 'is-active': activeCat === c.id }"
@@ -276,12 +333,12 @@ onUnmounted(() => window.removeEventListener('keydown', onGlobalKey))
             <Icon name="pencil" />
           </button>
         </div>
-        <button class="nv-navitem nv-navadd" type="button" @click="openAddCategory">
-          <Icon name="plus" />添加分类
-        </button>
       </nav>
 
-      <button class="nv-sideadd" type="button" @click="openAddLink()"><Icon name="plus" />添加链接</button>
+      <div class="nv-navaddrow">
+        <button class="nv-navadd" type="button" @click="openAddCategory"><Icon name="plus" />分类</button>
+        <button class="nv-sideadd" type="button" @click="openAddLink()"><Icon name="plus" />链接</button>
+      </div>
 
       <div class="nv-sidefoot">
         <div class="nv-minibtn-row">
@@ -339,7 +396,7 @@ onUnmounted(() => window.removeEventListener('keydown', onGlobalKey))
         </section>
 
         <div v-if="!sections.length" class="nv-empty">
-          {{ query ? '没有匹配的链接' : '还没有链接,点右上角「添加链接」开始' }}
+          {{ query ? '没有匹配的链接' : '还没有链接,点左侧「链接」按钮添加' }}
         </div>
       </div>
     </main>

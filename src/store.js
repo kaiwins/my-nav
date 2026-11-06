@@ -20,29 +20,12 @@ function normalizeUrl(url) {
 }
 
 function defaultData() {
-  const cat = (name, color) => ({ id: uid(), name, color })
-  const dev = cat('开发工具', PALETTE[0])
-  const ai = cat('AI', PALETTE[1])
-  const fun = cat('娱乐', PALETTE[2])
-  const tool = cat('工具', PALETTE[3])
-  const link = (categoryId, name, url) => ({ id: uid(), categoryId, name, url, createdAt: Date.now() })
+  // 默认只给一条示例,其余由用户自己添加
+  const main = { id: uid(), name: '常用', color: PALETTE[0] }
   return {
     version: 1,
-    categories: [dev, ai, fun, tool],
-    links: [
-      link(dev.id, 'GitHub', 'https://github.com'),
-      link(dev.id, 'V2EX', 'https://v2ex.com'),
-      link(dev.id, 'MDN', 'https://developer.mozilla.org'),
-      link(dev.id, '掘金', 'https://juejin.cn'),
-      link(ai.id, 'ChatGPT', 'https://chatgpt.com'),
-      link(ai.id, 'Claude', 'https://claude.ai'),
-      link(ai.id, '智谱清言', 'https://chatglm.cn'),
-      link(fun.id, '知乎', 'https://zhihu.com'),
-      link(fun.id, 'B站', 'https://bilibili.com'),
-      link(fun.id, 'YouTube', 'https://youtube.com'),
-      link(tool.id, 'DeepL', 'https://www.deepl.com'),
-      link(tool.id, 'Notion', 'https://www.notion.so'),
-    ],
+    categories: [main],
+    links: [{ id: uid(), categoryId: main.id, name: 'GitHub', url: 'https://github.com', createdAt: Date.now() }],
   }
 }
 
@@ -102,6 +85,22 @@ export function useNavStore() {
   }
 
   /**
+   * 分类拖拽排序:把 dragId 分类插到 beforeId 分类之前;
+   * beforeId 为 null 时放到末尾。
+   */
+  function moveCategory(dragId, beforeId) {
+    const from = state.categories.findIndex((c) => c.id === dragId)
+    if (from < 0) return
+    const [item] = state.categories.splice(from, 1)
+    if (beforeId) {
+      const idx = state.categories.findIndex((c) => c.id === beforeId)
+      state.categories.splice(idx < 0 ? state.categories.length : idx, 0, item)
+    } else {
+      state.categories.push(item)
+    }
+  }
+
+  /**
    * 把链接拖到 targetCategoryId 分类里,插到 beforeId 链接之前;
    * beforeId 为 null 时追加到该分类末尾。
    */
@@ -137,6 +136,6 @@ export function useNavStore() {
     state, PALETTE,
     addLink, updateLink, removeLink,
     addCategory, updateCategory, removeCategory,
-    moveLink, exportJson, importJson,
+    moveLink, moveCategory, exportJson, importJson,
   }
 }

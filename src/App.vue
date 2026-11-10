@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, reactive, onMounted, onUnmounted } from 'vue'
+import { ref, computed, reactive, watch, onMounted, onUnmounted } from 'vue'
 import { useNavStore } from './store.js'
 import LinkDialog from './components/LinkDialog.vue'
 import CategoryDialog from './components/CategoryDialog.vue'
@@ -14,6 +14,10 @@ const activeCat = ref('all')
 const query = ref('')
 const searchInput = ref(null)
 const mainEl = ref(null)
+
+/* 卡片样式:row 横排紧凑 / grid 启动台图标,记忆在 localStorage */
+const cardStyle = ref(localStorage.getItem('my-nav-cardstyle') === 'grid' ? 'grid' : 'row')
+watch(cardStyle, (v) => localStorage.setItem('my-nav-cardstyle', v))
 
 function setCat(id) {
   activeCat.value = id
@@ -94,6 +98,8 @@ const counts = computed(() => {
   for (const l of state.links) m[l.categoryId] = (m[l.categoryId] || 0) + 1
   return m
 })
+
+const totalCount = computed(() => state.links.length)
 
 /* ---------- 链接弹窗 ---------- */
 const linkDialog = reactive({ open: false, mode: 'add', link: null, form: { name: '', url: '', categoryId: '' } })
@@ -417,6 +423,29 @@ onUnmounted(() => window.removeEventListener('keydown', onGlobalKey))
     <!-- 主区域 -->
     <main class="nv-main" ref="mainEl" @scroll="onMainScroll">
       <div class="nv-body">
+        <div class="nv-toolbar">
+          <span class="nv-total">共 {{ totalCount }} 个链接 · {{ state.categories.length }} 个分类</span>
+          <div class="nv-seg" role="group" aria-label="卡片样式">
+            <button
+              type="button"
+              :class="{ 'is-active': cardStyle === 'row' }"
+              title="横排紧凑"
+              aria-label="横排紧凑样式"
+              @click="cardStyle = 'row'"
+            >
+              <Icon name="rows" />
+            </button>
+            <button
+              type="button"
+              :class="{ 'is-active': cardStyle === 'grid' }"
+              title="图标网格"
+              aria-label="图标网格样式"
+              @click="cardStyle = 'grid'"
+            >
+              <Icon name="grid" />
+            </button>
+          </div>
+        </div>
         <section
           v-for="(s, si) in sections"
           :key="s.cat.id"
@@ -429,7 +458,7 @@ onUnmounted(() => window.removeEventListener('keydown', onGlobalKey))
             <h3>{{ s.cat.name }}</h3>
             <span class="nv-count">{{ s.links.length }}</span>
           </div>
-          <div class="nv-grid" @dragover="onDragOver" @drop="onDropOnGrid($event, s.cat)">
+          <div class="nv-grid" :class="'is-' + cardStyle" @dragover="onDragOver" @drop="onDropOnGrid($event, s.cat)">
             <a
               v-for="(link, li) in s.links"
               :key="link.id"

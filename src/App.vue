@@ -4,6 +4,7 @@ import { useNavStore } from './store.js'
 import LinkDialog from './components/LinkDialog.vue'
 import CategoryDialog from './components/CategoryDialog.vue'
 import Icon from './components/Icon.vue'
+import Favicon from './components/Favicon.vue'
 
 const store = useNavStore()
 const { state } = store
@@ -448,7 +449,7 @@ onUnmounted(() => window.removeEventListener('keydown', onGlobalKey))
               @dragover="onDragOverCard($event, link)"
               @drop.stop="onDropOnCard($event, s.cat, s.links, li)"
             >
-              <span class="nv-dot"></span>
+              <Favicon :url="link.url" :color="s.cat.color" :name="link.name" />
               <span class="nv-name">{{ link.name }}</span>
               <button class="nv-edit" type="button" title="编辑" aria-label="编辑链接" @click.stop.prevent="openEditLink(link)">
                 <Icon name="pencil" />
